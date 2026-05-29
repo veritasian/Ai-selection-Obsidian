@@ -47,14 +47,18 @@ const DEFAULT_SETTINGS = {
     toolbarMaxVisible: 5,
 };
 
-// ─── SVG icons (thin line, theme-adaptive) ───────────────────────────
+// ─── Letter-in-circle icon (first char of name) ─────────────────────
+function letterIcon(name) {
+    const ch = (name || '?')[0].toUpperCase();
+    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"/>
+        <text x="12" y="16" text-anchor="middle" font-size="12" fill="currentColor" stroke="none" font-family="system-ui, sans-serif" font-weight="600">${ch}</text>
+    </svg>`;
+}
+
 const ICONS = {
-    translate: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l4 10"/><path d="M9 8l4 10"/><line x1="2" y1="12" x2="10" y2="12"/><circle cx="17" cy="12" r="4"/><line x1="15" y1="7" x2="15" y2="5"/><line x1="15" y1="19" x2="15" y2="17"/></svg>`,
-    copy: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
-    search: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
-    skill: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
-    more: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>`,
-    close: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+    more: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="19" r="1.3"/></svg>`,
+    close: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="7" y1="7" x2="17" y2="17"/><line x1="17" y1="7" x2="7" y2="17"/></svg>`,
 };
 
 // ─── CSS ──────────────────────────────────────────────────────────────
@@ -217,11 +221,11 @@ module.exports = class SelectionAssistant extends Plugin {
     }
 
     getButton(id) {
-        if (id === 'translate') return { id, name: 'Translate', type: 'translate', icon: ICONS.translate };
-        if (id === 'copy') return { id, name: 'Copy', type: 'copy', icon: ICONS.copy };
-        if (id === 'search') return { id, name: 'Search', type: 'search', icon: ICONS.search };
+        if (id === 'translate') return { id, name: 'Translate', type: 'translate', icon: letterIcon('T') };
+        if (id === 'copy') return { id, name: 'Copy', type: 'copy', icon: letterIcon('C') };
+        if (id === 'search') return { id, name: 'Search', type: 'search', icon: letterIcon('S') };
         const skill = this.settings.skills.find(s => s.id === id && s.enabled);
-        if (skill) return { id: skill.id, name: skill.name, type: 'skill', icon: ICONS.skill, skill };
+        if (skill) return { id: skill.id, name: skill.name, type: 'skill', icon: letterIcon(skill.name), skill };
         return null;
     }
 
@@ -705,7 +709,7 @@ class SASettingsTab extends PluginSettingTab {
 
         // ====== Custom Skills ======
         containerEl.createEl('h2', { text: 'Custom Skills' });
-        containerEl.createEl('p', { text: 'Define up to 5 skills. Use {{text}} for selected text.', cls: 'setting-item-description' });
+        containerEl.createEl('p', { text: 'Define up to 5 skills. Use {{text}} for selected text. Name in English — the first letter is used as the toolbar icon.', cls: 'setting-item-description' });
 
         const skillList = containerEl.createDiv();
         const renderSkills = () => {

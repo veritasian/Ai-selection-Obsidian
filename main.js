@@ -494,7 +494,10 @@ const LLMService = {
     _detectProtocol(host) {
         if (host.includes('11434') || host.includes('ollama')) return 'ollama';
         if (host.includes('openrouter')) return 'openrouter';
-        if (host.includes('anthropic') || host.includes('deepseek')) return 'anthropic';
+        // Only the /anthropic path uses Anthropic protocol.
+        // /v1 path on api.deepseek.com is OpenAI-compatible.
+        if (host.includes('/anthropic')) return 'anthropic';
+        if (host.includes('deepseek')) return 'openai';  // /v1 path
         return 'openai';
     },
 

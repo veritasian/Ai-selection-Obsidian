@@ -4,8 +4,8 @@ const { Plugin, PluginSettingTab, Setting, Notice, Modal, TextComponent, TextAre
 const PROVIDER_PRESETS = {
     'deepseek': {
         name: 'DeepSeek',
-        host: 'https://api.deepseek.com/anthropic',
-        search: 'deepseek-v4-pro',
+        host: 'https://api.deepseek.com/v1',
+        search: 'deepseek-chat',
     },
     'openrouter': {
         name: 'OpenRouter',
@@ -491,71 +491,53 @@ module.exports = class SelectionAssistant extends Plugin {
 // ─── LLM Service ─────────────────────────────────────────────────────
 
 const LLMService = {
-    _detectProtocol(host) {
-        if (host.includes('11434') || host.includes('ollama')) return 'ollama';
-        if (host.includes('openrouter')) return 'openrouter';
-        // Only the /anthropic path uses Anthropic protocol.
-        // /v1 path on api.deepseek.com is OpenAI-compatible.
-        if (host.includes('/anthropic')) return 'anthropic';
-        if (host.includes('deepseek')) return 'openai';  // /v1 path
-        return 'openai';
-    },
+    // Everything is OpenAI-compatible /v1/chat/completions. Only Ollama skips auth.
 
     async chat(settings, prompt) {
         const host = settings.llmHost.replace(/\/+$/, '');
-        if (!settings.llmApiKey && host.includes('api')) {
-            throw new Error('API key is empty. Enter your key first.');
-        }
-        const proto = this._detectProtocol(host);
-
-        let url, body, headers;
+        const isOllama = host.includes('11434') || host.includes('ollama');
         const model = settings.llmModel || (PROVIDER_PRESETS[settings.llmProvider]?.search || 'gpt-4');
 
-        if (proto === 'ollama') {
-            url = host + '/chat/completions';
-            body = JSON.stringify({ model, max_tokens: settings.llmMaxTokens, messages: [{ role: 'user', content: prompt }] });
-            headers = { 'Content-Type': 'application/json' };
-        } else if (proto === 'anthropic') {
-            url = host + '/messages';
-            body = JSON.stringify({ model, max_tokens: settings.llmMaxTokens, messages: [{ role: 'user', content: prompt }] });
-            headers = { 'Content-Type': 'application/json', 'x-api-key': settings.llmApiKey, 'anthropic-version': '2023-06-01' };
-        } else {
-            // OpenAI-compatible: OpenRouter, Groq, etc.
-            url = host + '/chat/completions';
-            body = JSON.stringify({ model, max_tokens: settings.llmMaxTokens, messages: [{ role: 'user', content: prompt }] });
-            headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.llmApiKey}` };
+        if (!isOllama && !settings.llmApiKey) {
+            throw new Error('API key is empty. Enter your key first.');
         }
 
-        console.log('[SA] LLM request:', { url, model, hasKey: !!settings.llmApiKey });
+        const url = host + '/chat/completions';
+        const body = JSON.stringify({
+            model,
+            max_tokens: settings.llmMaxTokens,
+            messages: [{ role: 'user', content: prompt }]
+        });
+        const headers = { 'Content-Type': 'application/json' };
+        if (!isOllama) {
+            headers['Authorization'] = `Bearer ${settings.llmApiKey}`;
+        }
 
         const resp = await fetch(url, { method: 'POST', headers, body });
         if (!resp.ok) {
             const err = await resp.text();
-            throw new Error(`LLM ${resp.status}: ${err.slice(0, 200)}`);
+            throw new Error(`HTTP ${resp.status}: ${err.slice(0, 200)}`);
         }
         const data = await resp.json();
-        if (data.content && data.content[0]) return data.content[0].text;
         if (data.choices && data.choices[0]) return data.choices[0].message.content;
+        if (data.content && data.content[0]) return data.content[0].text;
         if (data.message) return data.message.content;
         return JSON.stringify(data);
     },
 
     async fetchModels(settings) {
         const host = settings.llmHost.replace(/\/+$/, '');
-        if (!settings.llmApiKey && host.includes('api')) {
+        const isOllama = host.includes('11434') || host.includes('ollama');
+
+        if (!isOllama && !settings.llmApiKey) {
             throw new Error('API key is empty. Enter your key first.');
         }
-        const proto = this._detectProtocol(host);
-        const headers = {};
 
-        if (proto === 'anthropic') {
-            headers['x-api-key'] = settings.llmApiKey;
-            headers['anthropic-version'] = '2023-06-01';
-        } else if (proto !== 'ollama') {
+        const headers = {};
+        if (!isOllama) {
             headers['Authorization'] = `Bearer ${settings.llmApiKey}`;
         }
 
-        console.log('[SA] Fetch models:', host + '/models', { hasKey: !!settings.llmApiKey });
         const resp = await fetch(host + '/models', { headers });
         if (!resp.ok) {
             const err = await resp.text();
@@ -636,9 +618,9 @@ class SASettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('API Host')
-            .setDesc('Anthropic or OpenAI-compatible endpoint')
+            .setDesc('OpenAI-compatible endpoint (e.g. /v1)')
             .addText(t => {
-                t.setValue(s.llmHost).setPlaceholder('https://api.deepseek.com/anthropic');
+                t.setValue(s.llmHost).setPlaceholder('https://api.deepseek.com/v1');
                 t.inputEl.addEventListener('input', () => { s.llmHost = t.getValue(); s.llmSaved = false; });
                 t.onChange(async v => { s.llmHost = v; s.llmSaved = false; await this.plugin.saveSettings(); });
             });

@@ -7,10 +7,10 @@ const PROVIDER_PRESETS = {
         host: 'https://api.deepseek.com/anthropic',
         search: 'deepseek-v4-pro',
     },
-    'siliconflow': {
-        name: 'SiliconFlow',
-        host: 'https://api.siliconflow.cn/v1',
-        search: 'deepseek-ai/DeepSeek-V3',
+    'openrouter': {
+        name: 'OpenRouter',
+        host: 'https://openrouter.ai/api/v1',
+        search: 'openai/gpt-5.2',
     },
     'ollama': {
         name: 'Ollama (Local)',
@@ -47,14 +47,14 @@ const DEFAULT_SETTINGS = {
     toolbarMaxVisible: 5,
 };
 
-// ─── SVG icons (thin line, white-adapted) ──────────────────────────────
+// ─── Emoji icons ──────────────────────────────────────────────────────
 const ICONS = {
-    translate: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l4 10"/><path d="M9 8l4 10"/><line x1="2" y1="12" x2="10" y2="12"/><circle cx="17" cy="12" r="4"/><line x1="15" y1="7" x2="15" y2="5"/><line x1="15" y1="19" x2="15" y2="17"/></svg>`,
-    copy: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
-    search: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
-    skill: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
-    more: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>`,
-    close: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+    translate: '📖',
+    copy: '📋',
+    search: '🔍',
+    skill: '⚡',
+    more: '⋯',
+    close: '✕',
 };
 
 // ─── CSS ──────────────────────────────────────────────────────────────
@@ -73,10 +73,10 @@ const TOOLBAR_CSS = `
 .theme-dark .sa-toolbar { background: rgba(35,35,35,0.94); box-shadow: 0 4px 20px rgba(0,0,0,0.35); }
 .sa-toolbar.sa-visible { opacity: 1; transform: translateY(0); }
 .sa-toolbar button {
-    all: unset; display: flex; align-items: center; gap: 5px;
-    padding: 5px 9px; border-radius: 6px; cursor: pointer;
-    font-size: 12px; font-weight: 500; color: var(--text-muted, #777);
-    white-space: nowrap; transition: background 0.1s, color 0.1s; flex-shrink: 0;
+    all: unset; display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 6px; cursor: pointer;
+    font-size: 16px; color: var(--text-muted, #777);
+    transition: background 0.1s, color 0.1s; flex-shrink: 0;
 }
 .sa-toolbar button:hover { background: var(--background-modifier-hover, rgba(0,0,0,0.05)); color: var(--text-normal, #222); }
 .sa-toolbar button:active { background: var(--background-modifier-active, rgba(0,0,0,0.08)); }
@@ -273,7 +273,8 @@ module.exports = class SelectionAssistant extends Plugin {
 
         for (const btn of visible) {
             const el = document.createElement('button');
-            el.innerHTML = `${btn.icon} ${btn.name}`;
+            el.innerHTML = btn.icon;
+            el.title = btn.name;
             el.addEventListener('mousedown', (ev) => { ev.preventDefault(); ev.stopPropagation(); this.doAction(btn); });
             toolbar.appendChild(el);
         }
@@ -320,7 +321,11 @@ module.exports = class SelectionAssistant extends Plugin {
         menu.className = 'sa-overflow';
         for (const btn of items) {
             const row = document.createElement('button');
-            row.innerHTML = `${btn.icon} ${btn.name}`;
+            row.innerHTML = `${btn.icon}`;
+            const label = document.createElement('span');
+            label.textContent = btn.name;
+            label.style.cssText = 'font-size:12px;';
+            row.appendChild(label);
             row.addEventListener('mousedown', (ev) => { ev.preventDefault(); ev.stopPropagation(); this.hideOverflowMenu(); this.doAction(btn); });
             menu.appendChild(row);
         }
@@ -608,7 +613,7 @@ class SASettingsTab extends PluginSettingTab {
             .setDesc('Select your LLM provider')
             .addDropdown(d => {
                 d.addOption('deepseek', 'DeepSeek');
-                d.addOption('siliconflow', 'SiliconFlow');
+                d.addOption('openrouter', 'OpenRouter');
                 d.addOption('ollama', 'Ollama (Local)');
                 d.addOption('custom', 'Custom');
                 d.setValue(s.llmProvider);

@@ -1,68 +1,102 @@
-# Selection Assistant — Obsidian Plugin
+# Selection Assistant — Smart Floating Toolbar for Obsidian
 
-Select text in Obsidian and a floating toolbar appears with quick actions: translate, copy, search, and custom LLM-powered skills.
+> Drag-select any text in Obsidian and a sleek floating toolbar appears. Translate, copy, search, or run custom LLM prompts — all without leaving your note.
+
+[![GitHub stars](https://img.shields.io/github/stars/veritasian/selection-assistant?style=flat)](https://github.com/veritasian/selection-assistant)
+[![license](https://img.shields.io/github/license/veritasian/selection-assistant?style=flat)](LICENSE)
+[![Obsidian](https://img.shields.io/badge/Obsidian-Plugin-%237C3AED?logo=obsidian)](https://obsidian.md)
+
+[中文说明](README-zh.md)
+
+## Why Selection Assistant
+
+Obsidian is a powerful writing tool, but switching between apps to translate, search, or process text breaks your flow. Selection Assistant puts everything right next to your cursor — just drag, click, done.
+
+Each button shows the **first letter of its name in a white circle**. Native to Obsidian, adapts to light/dark theme automatically.
 
 ## Features
 
-- **Floating toolbar** — Apple-style, appears near your selection
-- **Built-in actions** — Translate (Google Translate API), Copy, Search (Google/Bing)
-- **Custom skills** — Up to 5 LLM-powered actions with your own prompts
-- **LLM config** — Bring your own provider (DeepSeek, Anthropic, OpenRouter, etc.)
-- **Right-click menu** — Copy, Paste, Cut with one click
-- **Toolbar ordering** — Reorder buttons in settings, overflow goes to "⋯" menu
-- **Dark mode** — Adapts to Obsidian's theme automatically
+- **Drag-select to trigger** — no clicking, no double-clicking. Only appears when you intentionally select text
+- **Translate** — Google Translate API, auto-detect → your target language
+- **Copy & Search** — one-click copy to clipboard or open in Google/Bing
+- **Custom LLM skills** — up to 5 skills powered by your own AI provider
+- **Provider presets** — DeepSeek, OpenRouter, Ollama, or custom endpoint
+- **Fetch & test** — pull model list from API, test connection before saving
+- **Reorderable toolbar** — visible buttons + "⋯" overflow menu
+- **Right-click menu** — Copy, Paste, Cut in context menu
+- **Dark mode** — inherits Obsidian theme colors
 
 ## Quickstart
 
 ```bash
-# Clone into your vault's plugins folder
 cd YOUR_VAULT/.obsidian/plugins
 git clone https://github.com/veritasian/selection-assistant.git
 ```
 
-Then enable it in Obsidian: Settings → Community Plugins → Selection Assistant.
+Restart Obsidian. Settings → Community Plugins → Enable **Selection Assistant**.
 
-### LLM Setup
+Open any note, drag-select some text. The toolbar pops up.
 
-1. Settings → Selection Assistant → LLM Configuration
-2. Fill in: Provider name, API Host, API Key
-3. Click **Fetch Models** to list available models
-4. Pick a model, set max tokens
-5. Go to Custom Skills tab, define your skills with `{{text}}` placeholder
+## Settings
 
-### Example skill prompts
-
-```
-Explain:     "Explain the following in simple terms:\n\n{{text}}"
-Summarize:   "Summarize this in 3 bullet points:\n\n{{text}}"
-Improve:     "Improve the writing, keep the same meaning:\n\n{{text}}"
-Translate:   "Translate to French:\n\n{{text}}"
-Code Review: "Review this code and suggest improvements:\n\n{{text}}"
-```
+| Section | What you configure |
+|---|---|
+| **General** | Search engine (Google/Bing), translate target language (zh/en/ja/fr...), max visible buttons |
+| **LLM** | Provider dropdown (DeepSeek/OpenRouter/Ollama/Custom), API host, API key, fetch models, save & test |
+| **Custom Skills** | Add up to 5 skills: English name + prompt with `{{text}}` placeholder. First letter becomes the icon |
+| **Toolbar Order** | ↑↓ to arrange button sequence |
 
 ## How it works
 
 ```
-Select text ──→ Toolbar pops up near cursor
-                 │
-                 ├── 📖 Translate → Google Translate API
-                 ├── 📋 Copy      → Clipboard
-                 ├── 🔍 Search    → Browser (Google/Bing)
-                 ├── ⚡ Custom 1  → LLM
-                 └── ⚡ Custom 2  → LLM
-                 ⋯  (more in overflow)
+User drag-selects text
+        │
+        ▼
+┌──────────────────────────────────┐
+│  Ⓣ  Ⓒ   Ⓢ   Ⓔ   Ⓢ   Ⓘ   ⋯    │  ← toolbar
+│  Tr  Cp  Sr  Ex  Su  Im  more   │
+└──────────────────────────────────┘
+   │    │    │    │──────┘──────┘
+   ▼    ▼    ▼    ▼
+ Google Clip Browser LLM
 ```
 
-## Settings
+## Built-in actions
 
-| Tab | What |
-|---|---|
-| General | Search engine, translate target language, toolbar size |
-| LLM | Provider, API host, API key, model, max tokens |
-| Custom Skills | Add/edit/delete skills with name, icon, prompt |
-| Toolbar Order | Reorder buttons with ↑↓ |
+| Action | Technology | No setup needed |
+|---|---|---|
+| Translate | `translate.googleapis.com` | ✅ |
+| Copy | `navigator.clipboard` | ✅ |
+| Search | Opens `google.com` or `bing.com` | ✅ |
+
+## Custom skills (LLM)
+
+Bring your own API key. Supports any OpenAI-compatible endpoint (`/v1/chat/completions`).
+
+**Supported providers out of the box:**
+
+| Provider | Endpoint | Default model |
+|---|---|---|
+| DeepSeek | `api.deepseek.com/v1` | `deepseek-chat` |
+| OpenRouter | `openrouter.ai/api/v1` | `openai/gpt-5.2` |
+| Ollama | `localhost:11434/v1` | `llama3.2` |
+
+**Example prompts:**
+
+```
+Explain:    "Explain in simple terms:\n\n{{text}}"
+Summarize:  "Summarize in 3 bullet points:\n\n{{text}}"
+Polish:     "Improve the writing, keep the same meaning:\n\n{{text}}"
+Translate:  "Translate to French:\n\n{{text}}"
+Review:     "Review and suggest improvements:\n\n{{text}}"
+```
 
 ## Requirements
 
-- Obsidian v1.0.0+
-- LLM provider (any Anthropic-compatible API) for custom skills
+- Obsidian **v1.0.0+**
+- Internet connection (for Translation and LLM features)
+- API key from your chosen provider (for Custom Skills)
+
+## License
+
+[MIT](LICENSE) © veritasian

@@ -1,4 +1,4 @@
-const { Plugin, PluginSettingTab, Setting, Notice, Menu, MarkdownRenderer, requireApiVersion } = require('obsidian');
+const { Plugin, PluginSettingTab, Setting, Notice } = require('obsidian');
 
 // ─── Default Settings ─────────────────────────────────────────────────
 const DEFAULT_SETTINGS = {
@@ -268,6 +268,7 @@ module.exports = class SelectionAssistant extends Plugin {
         this.styleEl = document.createElement('style');
         this.styleEl.textContent = TOOLBAR_CSS;
         document.head.appendChild(this.styleEl);
+        console.log('[Selection Assistant] Loaded');
 
         // State
         this.toolbar = null;
@@ -383,30 +384,9 @@ module.exports = class SelectionAssistant extends Plugin {
             const sel = window.getSelection();
             const text = (sel || '').toString().trim();
             if (text && text.length > 0 && text.length < 5000) {
-                // Only show if we're in an editable area or preview
-                const activeEl = document.activeElement;
-                const inEditor = activeEl && (
-                    activeEl.classList.contains('cm-content') ||
-                    activeEl.closest('.markdown-source-view') ||
-                    activeEl.closest('.markdown-preview-view') ||
-                    activeEl.closest('.cm-editor') ||
-                    activeEl.closest('.workspace-leaf')
-                );
-                // Also check if selection is inside a note
-                const selNode = sel.anchorNode;
-                const inNote = selNode && (
-                    selNode.parentElement?.closest('.markdown-source-view') ||
-                    selNode.parentElement?.closest('.markdown-preview-view') ||
-                    selNode.parentElement?.closest('.cm-content')
-                );
-
-                if ((inEditor || inNote) && text !== this.lastSelection) {
-                    this.lastSelection = text;
-                    this.showToolbar(sel, e);
-                } else if (!text) {
-                    this.lastSelection = '';
-                    this.hideToolbar();
-                }
+                console.log('[SA] Selection:', text.substring(0, 30));
+                this.lastSelection = text;
+                this.showToolbar(sel, e);
             } else if (!text) {
                 this.lastSelection = '';
                 this.hideToolbar();
@@ -434,7 +414,7 @@ module.exports = class SelectionAssistant extends Plugin {
         this.hideOverflowMenu();
 
         const rect = this.getSelectionRect();
-        if (!rect) return;
+        if (!rect && !mouseEvent) return;
 
         const toolbar = document.createElement('div');
         toolbar.className = 'selection-toolbar';
@@ -467,25 +447,24 @@ module.exports = class SelectionAssistant extends Plugin {
         document.body.appendChild(toolbar);
         this.toolbar = toolbar;
 
-        // Position above the selection end
+        // Position near the selection. Fallback to mouse position.
         const viewportW = window.innerWidth;
-        const viewportH = window.innerHeight;
+        const baseX = rect ? rect.right : mouseEvent.clientX;
+        const baseY = rect ? rect.top : mouseEvent.clientY;
+        const baseBottom = rect ? rect.bottom : mouseEvent.clientY;
 
-        // Force a layout to get dimensions
         requestAnimationFrame(() => {
             const tw = toolbar.offsetWidth;
             const th = toolbar.offsetHeight;
 
-            let left = rect.right - tw / 2;
-            let top = rect.top - th - 8;
+            let left = baseX - tw / 2;
+            let top = baseY - th - 8;
 
-            // Clamp horizontal
             if (left < 8) left = 8;
             if (left + tw > viewportW - 8) left = viewportW - tw - 8;
 
-            // If not enough space above, put below
             if (top < 8) {
-                top = rect.bottom + 8;
+                top = baseBottom + 8;
             }
 
             toolbar.style.left = `${left}px`;
@@ -633,7 +612,7 @@ module.exports = class SelectionAssistant extends Plugin {
         popup.appendChild(closeBtn);
 
         // Load content
-        contentFn.then(html => {
+        Promise.resolve(contentFn).then(html => {
             if (this.popup === popup) {
                 popup.innerHTML = '';
                 popup.appendChild(closeBtn);
